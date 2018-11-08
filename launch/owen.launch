@@ -1,0 +1,32 @@
+<!-- Adapted from gazebosim.org/tutorials?tut=ros_roslaunch -->
+<!-- Uses code from github.com/dawonn/ros-pioneer3at and my fork (by @ogallagher) -->
+
+<launch>
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<arg name="world_name" value="$(find owen_gazebo)/worlds/owen_gazebo.world"/>
+	</include>
+
+	<!-- Open ROS control topics -->
+	<node pkg="pioneer3at" type="gazebo_bridge" name="Pioneer3AT_Gazebo" >
+	  <param name="ros_odom_frame"          type="str"    value="/Pioneer3AT/odom" />
+	  <param name="ros_child_frame"         type="str"    value="/Pioneer3AT/base_link" />
+	  <param name="ros_odom_tf_future_date" type="double" value="0.05" />
+	  
+	  <param name="gz_model_name"     type="str" value="Pioneer3AT" />
+	  <param name="gz_pose_topic"     type="str" value="~/pose/info" />
+	  <param name="gz_cmd_vel_topic"  type="str" value="~/Pioneer3AT/vel_cmd" />
+	  
+		<remap from="odom"    to="/Pioneer3AT/pose" />
+		<remap from="cmd_vel" to="/Pioneer3AT/cmd_vel" />
+	</node>	
+
+	<!-- Enable laser and open laser topic -->
+	<include file="$(find pioneer3at)/launch/lidar/gazebo_hokuyo.launch" />
+
+	<!-- Open joint-state topics -->
+	<include file="$(find pioneer3at)/launch/core/urdf.launch" />
+
+	<!-- Run topic multiplexer to handle simultaneous control commands -->
+	<include file="$(find pioneer3at)/launch/control/cmd_vel_mux.launch" />
+</launch>
+
