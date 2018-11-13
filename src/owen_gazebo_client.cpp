@@ -1,7 +1,7 @@
 /*
 
     Autor: Owen Gallagher
-    Fecha: 6 noviembre 2018
+    Fecha de creacion: 6 noviembre 2018
     Descripcion: nodo cliente para controlar el Pioneer3at simulado con Gazebo.
 
 */
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     std::thread commandThread(getCommands, &publisherCmd, &pacemaker);
     commandThread.join();
 
-	// Escucha info de laser
+    // Escucha info de laser
     ros::Subscriber subscriberLaser = nodeHandle.subscribe<sensor_msgs::LaserScan>("/Pioneer3AT/laserscan",50,laserCallback);
     
     ROS_INFO_STREAM("owen_gazebo_client is running!");
