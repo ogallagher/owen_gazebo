@@ -11,9 +11,12 @@
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/LaserScan.h"
 
-#include <sstream>
-#include <string>
+#include <iostream>
 #include <thread>
+#include <limits>       // std::numeric_limits
+
+#include "laser.h"
+#include "robot.h"
 
 #define KEYCODE_R 0x43
 #define KEYCODE_L 0x44
@@ -24,62 +27,81 @@
 #define KEYCODE_s 0x73
 #define KEYCODE_w 0x77
 
-// Generar comando para mover el robot
-geometry_msgs::Twist moveRobot(double vel, double ang) {
-    geometry_msgs::Twist cmd;
-    
-    cmd.linear.x = vel; // Eje X es el vector de avance
-    cmd.linear.y = 0;
-    cmd.linear.z = 0;
+using namespace std;
 
-    cmd.angular.x = 0;
-    cmd.angular.y = 0;
-    cmd.angular.z = ang; // Eje Z es el vector de rotacion
+// Parametros
+string robotNS = "pioneer3dx";
+string topicCmd = "/cmd_vel";
+string topicLaser = "/laser_scan";
 
-    return cmd;
-}
+//Objetos
+Laser laser;
+Robot robot(robotNS + topicCmd);
 
 // Escuchar entradas de usuario
-void getCommands(ros::Publisher *publisherCmdPtr, ros::Rate *pacemakerPtr) {
-    geometry_msgs::Twist cmdMsg;
-    char input;
-    
-    while (ros::ok) {
-        ROS_INFO_STREAM("WSAD to move.");
-        
-        std::cin >> input;
-        std::cin.ignore(50,'\n');
+void getCommands(ros::Rate *pacemakerPtr) {
+	char input;
+	
+	while (ros::ok) {
+	    ROS_INFO_STREAM("WSAD to move. Anything else to stop.");
+	    
+	    cin >> input;
+	    cin.ignore(50,'\n');
 
-        switch(input) {
-            case KEYCODE_w:
-                ROS_INFO_STREAM("FORWARD");
-                cmdMsg = moveRobot(-1,0);
-                break;
-            case KEYCODE_s:
-                ROS_INFO_STREAM("BACKWARD");
-                cmdMsg = moveRobot(1,0);
-                break;
-            case KEYCODE_a:
-                ROS_INFO_STREAM("LEFT");
-                cmdMsg = moveRobot(0,-1);
-                break;
-            case KEYCODE_d:
-                ROS_INFO_STREAM("RIGHT");
-                cmdMsg = moveRobot(0,1);
-                break;
-            default:
-                cmdMsg = moveRobot(0,0);
-        }
-
-        (*publisherCmdPtr).publish(cmdMsg);
-
-        (*pacemakerPtr).sleep();
+	    switch(input) {
+	        case KEYCODE_w:
+	            ROS_INFO_STREAM("FORWARD");
+	            robot.move(1,0);
+	            break;
+	            
+	        case KEYCODE_s:
+	            ROS_INFO_STREAM("BACKWARD");
+	            robot.move(-1,0);
+	            break;
+	            
+	        case KEYCODE_a:
+	            ROS_INFO_STREAM("LEFT");
+	            robot.move(0,-1);
+	            break;
+	            
+	        case KEYCODE_d:
+	            ROS_INFO_STREAM("RIGHT");
+	            robot.move(0,1);
+	            break;
+	            
+	        default:
+	            robot.move(0,0);
+	    }
     }
 }
 
 // Reaccionar a info del laser
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
-	ROS_INFO_STREAM("Laser scan received!");
+	if (!laser.paramsSet()) {
+		laser.setParams(data);
+		ROS_INFO_STREAM("laser.measuresLen = " + to_string(laser.measuresLen));
+	}
+	
+	int forward = laser.measuresLen / 2;
+	laser.readMeasures(data);
+	
+	string laserConfirm = "laser.measures[" + to_string(forward) + "] = " + to_string(laser.measures[forward]);
+	
+	ROS_INFO_STREAM(laserConfirm);
+}
+
+void readLaser(ros::Rate *pacemakerPtr) {
+	int counter = 0;
+	
+	while(ros::ok) {
+    	//ROS_INFO_STREAM("laserThread: spin_" + to_string(counter));
+    	
+        ros::spinOnce(); //Ejecutar callbacks que estan esperando mensajes
+        
+        counter++;
+        
+        pacemakerPtr->sleep(); //Solo revisar topico del laser segun el pacemaker
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -93,25 +115,25 @@ int main(int argc, char* argv[]) {
     ros::NodeHandle nodeHandle;
 
     // El nombre del topico que abre owen_gazebo.launch
-    ros::Publisher publisherCmd = nodeHandle.advertise<geometry_msgs::Twist>("/Pioneer3AT/cmd_vel",500);
+    robot.openPublisher(&nodeHandle);
     
     // Este nodo corre un maximo de 2 ciclos cada segundo
     ros::Rate pacemaker(2);
 
-    int counter = 0;
-
     // Maneja comandos del usuario en hilo separado
-    std::thread commandThread(getCommands, &publisherCmd, &pacemaker);
-    commandThread.join();
+    thread commandThread(getCommands, &pacemaker);
 
     // Escucha info de laser
-    ros::Subscriber subscriberLaser = nodeHandle.subscribe<sensor_msgs::LaserScan>("/Pioneer3AT/laserscan",50,laserCallback);
+    string laserTopic = robotNS + topicLaser;
+    ros::Subscriber subscriberLaser = nodeHandle.subscribe<sensor_msgs::LaserScan>(laserTopic,50,laserCallback);
     
-    ROS_INFO_STREAM("owen_gazebo_client is running!");
-    while(ros::ok) {
-        ros::spinOnce(); //Ejecutar callbacks que estan esperando mensajes (ninguno por ahora)
-        counter++;
-        pacemaker.sleep(); //Solo revisar topico del laser segun el pacemaker
+    thread laserThread(readLaser, &pacemaker);
+    
+    ROS_INFO_STREAM("owen_gazebo_client born.");
+    
+    while (ros::ok) {
+    	//nothing
     }
-    ROS_INFO_STREAM("owen_gazebo_client died.");
+    
+    ROS_INFO_STREAM("owen_gazebo_client killed.");
 }
