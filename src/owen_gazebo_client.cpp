@@ -17,6 +17,8 @@
 
 #include "laser.h"
 #include "robot.h"
+#include "gnt_graph.h"
+#include "drawer.h"
 
 #define KEYCODE_R 0x43
 #define KEYCODE_L 0x44
@@ -136,4 +138,6 @@ int main(int argc, char* argv[]) {
     }
     
     ROS_INFO_STREAM("owen_gazebo_client killed.");
+	
+	return 0;
 }
