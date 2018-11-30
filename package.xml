@@ -9,9 +9,9 @@
     <!-- The *depend tags are used to specify dependencies -->
     <!-- Dependencies can be catkin packages or system dependencies -->
     <depend>roscpp</depend>
-    <depend>pioneer3at</depend>
 
     <exec_depend>gazebo_ros</exec_depend>
+    <exec_depend>message_runtime</exec_depend>
     <!-- <exec_depend>p3dx_control</exec_depend> -->
     
     <build_depend>catkin</build_depend>
@@ -19,6 +19,7 @@
     <build_depend>geometry_msgs</build_depend>
     <build_depend>sensor_msgs</build_depend>
     <!-- <build_depend>p3dx_control</build_depend> -->
+	<build_depend>message_generation</build_depend>
 
     <buildtool_depend>catkin</buildtool_depend>
 

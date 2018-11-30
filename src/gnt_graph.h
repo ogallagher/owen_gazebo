@@ -14,8 +14,6 @@ Robotica
 
 using namespace std;
 
-enum NodeType {GAP,CLOUD,TRIO,OTHER};
-
 struct TreeEdge {
 	double x1,y1,x2,y2;
 };

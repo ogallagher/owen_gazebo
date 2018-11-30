@@ -7,6 +7,7 @@ Robotica
 */
 
 #include "gnt_graph.h"
+#include "owen_constants.h"
 
 using namespace std;
 
