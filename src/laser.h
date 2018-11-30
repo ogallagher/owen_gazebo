@@ -1,7 +1,13 @@
 #ifndef LASER_H
 #define LASER_H
 
+/*
+	Owen Gallagher
+	27 noviembre 2018
+*/
+
 #include <math.h>
+#include <limits>       // std::numeric_limits
 
 #include "sensor_msgs/LaserScan.h"
 
@@ -13,7 +19,8 @@ class Laser {
 		double angleMin;
 		double angleMax;
 		double* measures;
-		int measuresLen;
+		vector<float>::size_type measuresLen;
+		double rangeMax;
 		
 		Laser();
 		bool paramsSet();
