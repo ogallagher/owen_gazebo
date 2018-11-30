@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
     <name>owen_gazebo</name>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <description>The owen_gazebo package</description>
     <maintainer email="owengallagher@icloud.com">owengallagher</maintainer>
     <license>MIT</license>
@@ -12,10 +12,13 @@
     <depend>pioneer3at</depend>
 
     <exec_depend>gazebo_ros</exec_depend>
-
+    <!-- <exec_depend>p3dx_control</exec_depend> -->
+    
+    <build_depend>catkin</build_depend>
     <build_depend>std_msgs</build_depend>
     <build_depend>geometry_msgs</build_depend>
     <build_depend>sensor_msgs</build_depend>
+    <!-- <build_depend>p3dx_control</build_depend> -->
 
     <buildtool_depend>catkin</buildtool_depend>
 

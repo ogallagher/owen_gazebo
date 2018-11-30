@@ -10,11 +10,6 @@ Robotica
 
 using namespace std;
 
-char TRIO_COLOR[4] = {0xDD,0x00,0xFF,0xFF}; //morado
-char OTHER_COLOR[4] = {0xFF,0xFF,0xFF,0xFF}; //blanco
-char GAP_COLOR[4] = {0x00,0x00,0xFF,0xFF}; //azul
-char CLOUD_COLOR[4] = {0xFF,0x00,0x00,0xFF}; //rojo
-
 TreeNode::TreeNode() {
 	x = 0;
 	y = 0;
@@ -36,8 +31,18 @@ TreeNode::TreeNode(NodeType t, double x, double y, double rad, double rch) {
 }
 
 void TreeNode::addChild(TreeNode* child) {
-	children.push_back(child);
+	children.push_back(*child);
 	cout << "Nodo agregado al árbol: " << child->x << "," << child->y << endl;
+}
+
+void TreeNode::moveTo(double x, double y) {
+	this->x = x;
+	this->y = y;
+}
+
+void TreeNode::move(double x, double y) {
+	this->x += x;
+	this->y += y;
 }
 
 GNTGraph::GNTGraph() {

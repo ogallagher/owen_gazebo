@@ -2,15 +2,70 @@
 
 <sdf version="1.4">
 	<world name="default">
+        <!--
 		<include>
 			<uri>model://ground_plane</uri>
 		</include>
+        -->
+        
+        <!-- Specify physical properties of ground -->
+        <model name='ground_plane'>
+          <static>1</static>
+          <link name='link'>
+            <collision name='collision'>
+              <geometry>
+                <plane>
+                  <normal>0.000000 0.000000 1.000000</normal>
+                  <size>100.000000 100.000000</size>
+                </plane>
+              </geometry>
+              <surface>
+                <friction>
+                  <ode>
+                    <mu>100.000000</mu>
+                    <mu2>50.000000</mu2>
+                  </ode>
+                </friction>
+                <bounce/>
+                <contact>
+                  <ode/>
+                </contact>
+              </surface>
+            </collision>
+            <visual name='visual'>
+              <cast_shadows>0</cast_shadows>
+              <geometry>
+                <plane>
+                  <normal>0.000000 0.000000 1.000000</normal>
+                  <size>100.000000 100.000000</size>
+                </plane>
+              </geometry>
+              <material>
+                <script>
+                  <uri>file://media/materials/scripts/gazebo.material</uri>
+                  <name>Gazebo/Grey</name>
+                </script>
+              </material>
+            </visual>
+            <velocity_decay>
+              <linear>0.000000</linear>
+              <angular>0.000000</angular>
+            </velocity_decay>
+            <self_collide>0</self_collide>
+            <kinematic>0</kinematic>
+            <gravity>1</gravity>
+          </link>
+        </model>
+
 		<include>
 			<uri>model://sun</uri>
 		</include>
+
 		<include>
-			<uri>model://pioneer3at</uri>
+			<uri>model://pioneer3at-owen</uri>
+            <!-- <uri>model://pioneer3dx</uri> -->
 		</include>
+
 		<include>
 			<uri>model://obstacles</uri>
 			<pose>0 3 0 0 0 0</pose>

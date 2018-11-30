@@ -24,8 +24,8 @@ class TreeNode {
 	public:
 		enum NodeType type;
 		double x,y,radius,reach;
-		boolean visible;
-		boolean explored;
+		bool visible;
+		bool explored;
 		
 	    vector<TreeNode> children;
 	    vector<TreeEdge> branches;
@@ -33,6 +33,8 @@ class TreeNode {
 		TreeNode();
 		TreeNode(NodeType t, double x, double y, double rad, double rch);
 		void addChild(TreeNode* child);
+		void moveTo(double x, double y);
+		void move(double x, double y);
 };
 
 class GNTGraph {

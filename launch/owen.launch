@@ -5,7 +5,8 @@
 	<include file="$(find gazebo_ros)/launch/empty_world.launch">
 		<arg name="world_name" value="$(find owen_gazebo)/worlds/owen_gazebo.world"/>
 	</include>
-
+    
+    <!-- Pioneer3AT -->
 	<!-- Open ROS control topics -->
 	<node pkg="pioneer3at" type="gazebo_bridge" name="Pioneer3AT_Gazebo" >
 	  <param name="ros_odom_frame"          type="str"    value="/Pioneer3AT/odom" />
@@ -24,9 +25,37 @@
 	<include file="$(find pioneer3at)/launch/lidar/gazebo_hokuyo.launch" />
 
 	<!-- Open joint-state topics -->
-	<include file="$(find pioneer3at)/launch/core/urdf.launch" />
+    <param name="Pioneer3AT/urdf" command="$(find xacro)/xacro.py $(find pioneer3at)/urdf/pioneer3at.xacro" />
+    
+    <node pkg="robot_state_publisher" type="state_publisher" name="Pioneer3AT_tf_broadcaster"> 
+        <param name="tf_prefix" type="string" value="Pioneer3AT"/>
+        <param name="publish_frequency" type="double" value="20.0"/>
+        
+        <remap from="robot_description" to="/Pioneer3AT/urdf" />
+        <remap from="joint_states" to="Pioneer3AT/joint_states"/>
+    </node>
+      
+    <node pkg="pioneer3at" type="joint_state_publisher" name="Pioneer3AT_joints_publisher">
+        <param name="tf_future_date" type="double" value="0.05" />
+        
+        <remap from="joint_states" to="Pioneer3AT/joint_states"/>
+    </node>
 
 	<!-- Run topic multiplexer to handle simultaneous control commands -->
 	<include file="$(find pioneer3at)/launch/control/cmd_vel_mux.launch" />
+
+    <!-- Pioneer3DX -end->
+    <!-start- Load the URDF into the ROS Parameter Server -end->
+	<param name="robot_description"
+		command="$(find xacro)/xacro.py '$(find owen_gazebo)/models/pioneer3dx/urdf/pioneer3dx.xacro'" />
+
+    <!-start- Run a python script to the send a service call to gazebo_ros to spawn 
+		a URDF robot -end->
+	<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+		respawn="false" output="screen" args="-urdf -model pioneer3dx -param robot_description" />
+
+    <!-start- ros_control p3rd launch file -end->
+	<include file="$(find p3dx_control)/launch/control.launch" />
+    <!-start- -->
 </launch>
 

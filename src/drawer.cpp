@@ -7,8 +7,10 @@ Robotica
 */
 
 #include <iostream>
+#include <cmath>
 
 #include "drawer.h"
+#include "owen_colors.h"
 
 using namespace std;
 
@@ -75,18 +77,27 @@ bool Drawer::init() {
 	return success;
 }
 
-void Drawer::setColor(char r, char g, char b, char a) {
+void Drawer::setColor(int r, int g, int b, int a) {
 	paintColor[0] = r;
 	paintColor[1] = g;
 	paintColor[2] = b;
 	paintColor[3] = a;
 }
 
-void Drawer::setColor(char* c) {
+void Drawer::setColor(const int c[4]) {
 	paintColor[0] = c[0];
 	paintColor[1] = c[1];
 	paintColor[2] = c[2];
 	paintColor[3] = c[3];
+}
+
+void Drawer::render() {
+	SDL_RenderPresent(renderer);
+}
+
+void Drawer::clear() {
+	SDL_SetRenderDrawColor(renderer, backgroundColor[0], backgroundColor[1], backgroundColor[2], backgroundColor[3]);
+	SDL_RenderClear(renderer);
 }
 
 void Drawer::line(double x1, double y1, double x2, double y2) {
@@ -134,34 +145,47 @@ void Drawer::circle(double x0, double y0, double r) {
 void Drawer::node(TreeNode* node) {
 	switch(node->type) {
 		case GAP:
-		setColor(&GAP_COLOR);
+		setColor(OwenColors::GAP_COLOR[0],OwenColors::GAP_COLOR[1],OwenColors::GAP_COLOR[2],OwenColors::GAP_COLOR[3]);
 		break;
-		
 		case CLOUD:
-		setColor(&CLOUD_COLOR);
+		setColor(OwenColors::CLOUD_COLOR[0],OwenColors::CLOUD_COLOR[1],OwenColors::CLOUD_COLOR[2],OwenColors::CLOUD_COLOR[3]);
 		break;
 		
 		case TRIO:
-		setColor(&TRIO_COLOR);
+		setColor(OwenColors::TRIO_COLOR[0],OwenColors::TRIO_COLOR[1],OwenColors::TRIO_COLOR[2],OwenColors::TRIO_COLOR[3]);
 		break;
 		
 		case OTHER:
-		setColor(&OTHER_COLOR);
+		setColor(OwenColors::OTHER_COLOR[0],OwenColors::OTHER_COLOR[1],OwenColors::OTHER_COLOR[2],OwenColors::OTHER_COLOR[3]);
 		break;
 		
-		case default:
-		setColor(&OTHER_COLOR);
+		default:
+		setColor(OwenColors::GAP_COLOR[0],OwenColors::GAP_COLOR[1],OwenColors::GAP_COLOR[2],OwenColors::GAP_COLOR[3]);
 		break;
 	}
 	
 	circle(node->x,node->y,node->radius);
+	
+	setColor(OwenColors::OTHER_COLOR[0],OwenColors::OTHER_COLOR[1],OwenColors::OTHER_COLOR[2],OwenColors::OTHER_COLOR[3]);
+	for (int i=0; i<node->children.size(); i++) {
+		double x1 = node->x;
+		double y1 = node->y;
+		double x2 = node->children.at(i).x;
+		double y2 = node->children.at(i).y;
+		
+		line(x1,y1,x2,y2);
+	}
 }
 
-void Drawer::render() {
-	SDL_RenderPresent(renderer);
-}
-
-void Drawer::clear() {
-	SDL_SetRenderDrawColor(renderer, backgroundColor[0], backgroundColor[1], backgroundColor[2], backgroundColor[3]);
-	SDL_RenderClear(renderer);
+void Drawer::graph(GNTGraph* graph) {
+	TreeNode* node = graph->root;
+	vector<TreeNode>* children = &(node->children);
+	
+	this->node(node);
+	
+	if (children != NULL) {
+		for (int i=0; i<children->size(); i++) {
+			this->node(&(children->at(i)));
+		}
+	}
 }
