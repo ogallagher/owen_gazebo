@@ -35,10 +35,12 @@ using namespace std;
 string robotNS = "pioneer3dx";
 string topicCmd = "/cmd_vel";
 string topicLaser = "/laser_scan";
+string topicGNT = "/gnt_raw"
 
 //Objetos
 Laser laser;
 Robot robot(robotNS + topicCmd);
+ros::Publisher* publisherGNT = NULL;
 
 // Escuchar entradas de usuario
 void getCommands(ros::Rate *pacemakerPtr) {
@@ -77,7 +79,7 @@ void getCommands(ros::Rate *pacemakerPtr) {
     }
 }
 
-// Reaccionar a info del laser
+// Reaccionar a info del láser
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 	if (!laser.paramsSet()) {
 		laser.setParams(data);
@@ -88,6 +90,16 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 	laser.readMeasures(data);
 	
 	string laserConfirm = "laser.measures[" + to_string(forward) + "] = " + to_string(laser.measures[forward]);
+	
+	if (publisherGNT != NULL) {
+		OwenConstants::NodeType labels[laser.measuresLen];
+		
+		for (int i=0; i<laser.measuresLen; i++) {
+			labels[i] = OTHER;
+		}
+		
+		publisherGNT->publish(labels);
+	}
 	
 	ROS_INFO_STREAM(laserConfirm);
 }
@@ -102,7 +114,7 @@ void readLaser(ros::Rate *pacemakerPtr) {
         
         counter++;
         
-        pacemakerPtr->sleep(); //Solo revisar topico del laser segun el pacemaker
+        pacemakerPtr->sleep(); //Solo revisar topico del láser segun el pacemaker
     }
 }
 
@@ -116,7 +128,6 @@ int main(int argc, char* argv[]) {
     // Punto de acceso para comunicacion de ROS
     ros::NodeHandle nodeHandle;
 
-    // El nombre del topico que abre owen_gazebo.launch
     robot.openPublisher(&nodeHandle);
     
     // Este nodo corre un maximo de 2 ciclos cada segundo
@@ -130,6 +141,10 @@ int main(int argc, char* argv[]) {
     ros::Subscriber subscriberLaser = nodeHandle.subscribe<sensor_msgs::LaserScan>(laserTopic,50,laserCallback);
     
     thread laserThread(readLaser, &pacemaker);
+	
+	//Publica a gnt_raw
+	string gntTopic = robotNS + topicGNT;
+	publisherGNT = nodeHandle.advertise<gnt_raw>(gntTopic,500);
     
     ROS_INFO_STREAM("owen_gazebo_client born.");
     
