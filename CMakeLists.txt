@@ -101,6 +101,7 @@ add_executable(
 	src/owen_explorer_grapher.cpp
 	src/gnt_graph.cpp
 	src/drawer.cpp
+	src/gnt.cpp
 )
 
 ## Specify libraries to link a library or executable target against
@@ -109,7 +110,7 @@ target_link_libraries(
 	${SDL2_LIBRARIES}
 	${catkin_LIBRARIES}
 )
-=======
+
 #############
 ## Install ##
 #############
@@ -144,4 +145,3 @@ target_link_libraries(
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
->>>>>>> dcd7d3736806af2e715298c7dc1a3a1471375730

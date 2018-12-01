@@ -14,8 +14,10 @@
 #include <iostream>
 #include <thread>
 #include <limits>       // std::numeric_limits
+#include <vector>
 
 #include "owen_constants.h"
+#include "owen_gazebo/gnt_raw.h"
 #include "laser.h"
 #include "robot.h"
 #include "gnt_graph.h"
@@ -36,12 +38,12 @@ using namespace std;
 string robotNS = "pioneer3dx";
 string topicCmd = "/cmd_vel";
 string topicLaser = "/laser_scan";
-string topicGNT = "/gnt_raw"
+string topicGNT = "/gnt_raw";
 
 //Objetos
 Laser laser;
 Robot robot(robotNS + topicCmd);
-ros::Publisher* publisherGNT = NULL;
+ros::Publisher* publisherGNTPtr = NULL;
 
 // Escuchar entradas de usuario
 void getCommands(ros::Rate *pacemakerPtr) {
@@ -90,19 +92,73 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 	int forward = laser.measuresLen / 2;
 	laser.readMeasures(data);
 	
-	string laserConfirm = "laser.measures[" + to_string(forward) + "] = " + to_string(laser.measures[forward]);
+	//string confirmation = "laser.measures[" + to_string(forward) + "] = " + to_string(laser.measures[forward]);
+	//ROS_INFO_STREAM(confirmation);
 	
-	if (publisherGNT != NULL) {
-		OwenConstants::NodeType labels[laser.measuresLen];
+	//etiquetar medidas y luego enviar etiquetas
+	if (publisherGNTPtr != NULL) {
+		owen_gazebo::gnt_raw gntMessage;
+		vector<uint8_t> labels;
 		
+		OwenConstants::NodeType currentLabel = OwenConstants::OTHER;
+		OwenConstants::NodeType previousLabel = OwenConstants::OTHER;
+		OwenConstants::NodeType oldLabel = OwenConstants::OTHER;
+		
+		double currentMeasure;
+		double previousMeasure;
+		double oldMeasure;
+		double noise;
+		
+		currentMeasure = laser.measures[laser.measuresLen-1];
+		previousMeasure = laser.measures[laser.measuresLen-1-1];
+		
+		//checar si medidas son brechas o nubes
 		for (int i=0; i<laser.measuresLen; i++) {
-			labels[i] = OTHER;
+			//actualizar medidas
+			oldMeasure = previousMeasure;
+			previousMeasure = currentMeasure;
+			currentMeasure = laser.measures[i];
+			
+			if (currentMeasure == numeric_limits<double>::infinity()) { //nube
+				currentLabel = OwenConstants::CLOUD;
+				
+				if (previousLabel == OwenConstants::WALL) { //inicio de nube
+					previousLabel = OwenConstants::GAP;
+				}
+			}
+			else { //brecha o frontera
+				if (previousLabel == OwenConstants::CLOUD) {
+					currentLabel = OwenConstants::GAP; //fin de nube
+				}
+				else {
+					//determinar ruido (funcion de error)
+					noise = oldMeasure - previousMeasure;
+					if (noise == 0) {
+						noise = laser.noiseMin;
+					}
+					
+					ROS_INFO_STREAM("Noise.denom: " + to_string(noise));
+					noise = abs((previousMeasure - currentMeasure) - noise) / abs(noise);
+					ROS_INFO_STREAM("Noise: " + to_string(noise));
+					
+					//determinar si actual es una brecha
+					if (noise > Laser::noiseMax) {
+						currentLabel = OwenConstants::GAP; //dista demasiado para solo ser ruido
+					}
+					else {
+						currentLabel = OwenConstants::WALL; //probablemente es parte de la misma frontera 
+					}
+				}
+			}
+		
+			labels.push_back(static_cast<uint8_t>(currentLabel));
 		}
 		
-		publisherGNT->publish(labels);
+		gntMessage.length = static_cast<int>(laser.measuresLen);
+		gntMessage.labels = labels;
+		
+		publisherGNTPtr->publish(gntMessage);
 	}
-	
-	ROS_INFO_STREAM(laserConfirm);
 }
 
 void readLaser(ros::Rate *pacemakerPtr) {
@@ -127,25 +183,26 @@ int main(int argc, char* argv[]) {
     ros::init(argc,argv,"owen_gazebo_client");
 
     // Punto de acceso para comunicacion de ROS
-    ros::NodeHandle nodeHandle;
+    ros::NodeHandle rosnode;
 
-    robot.openPublisher(&nodeHandle);
+    robot.openPublisher(&rosnode);
     
     // Este nodo corre un maximo de 2 ciclos cada segundo
     ros::Rate pacemaker(2);
 
     // Maneja comandos del usuario en hilo separado
     thread commandThread(getCommands, &pacemaker);
+    
+    //Publica a gnt_raw
+	string gntTopic = robotNS + topicGNT;
+	ros::Publisher publisherGNT = rosnode.advertise<owen_gazebo::gnt_raw>(gntTopic,500);
+	publisherGNTPtr = &publisherGNT;
 
     // Escucha info de laser
     string laserTopic = robotNS + topicLaser;
-    ros::Subscriber subscriberLaser = nodeHandle.subscribe<sensor_msgs::LaserScan>(laserTopic,50,laserCallback);
+    ros::Subscriber subscriberLaser = rosnode.subscribe<sensor_msgs::LaserScan>(laserTopic,50,laserCallback);
     
     thread laserThread(readLaser, &pacemaker);
-	
-	//Publica a gnt_raw
-	string gntTopic = robotNS + topicGNT;
-	publisherGNT = nodeHandle.advertise<gnt_raw>(gntTopic,500);
     
     ROS_INFO_STREAM("owen_gazebo_client born.");
     

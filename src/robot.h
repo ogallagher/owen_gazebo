@@ -11,6 +11,7 @@ using namespace std;
 /*
 	Owen Gallagher
 	27 noviembre 2018
+	Robotica 1
 */
 
 class Robot {		

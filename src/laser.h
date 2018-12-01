@@ -15,6 +15,10 @@ using namespace std;
 
 class Laser {
 	public:
+		static bool finite;
+		static double noiseMax;
+		static double noiseMin;
+		
 		double angleUnit;
 		double angleMin;
 		double angleMax;

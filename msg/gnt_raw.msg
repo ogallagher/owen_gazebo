@@ -10,4 +10,5 @@
 # Entonces, owen_explorer_grapher compara gntCurrent y gntPrevious para
 # encontrar nodos aparecidos, desaparecidos, unidos y divididos.
 
-int8[] labels
+int32 length
+uint8[] labels

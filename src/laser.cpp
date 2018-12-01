@@ -7,8 +7,12 @@
 
 using namespace std;
 
+bool Laser::finite = true;
+double Laser::noiseMin = 0.1;
+double Laser::noiseMax = 25;
+
 Laser::Laser() {
-	rangeMax = 4; //rango de sensado
+	rangeMax = 4;				//rango de sensado
 }
 
 bool Laser::paramsSet() {

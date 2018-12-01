@@ -12,6 +12,9 @@ Robotica
 #include <iostream>
 #include <vector>
 
+#include "owen_constants.h"
+#include "gnt.h"
+
 using namespace std;
 
 struct TreeEdge {
@@ -20,7 +23,7 @@ struct TreeEdge {
 
 class TreeNode {
 	public:
-		enum NodeType type;
+		OwenConstants::NodeType type;
 		double x,y,radius,reach;
 		bool visible;
 		bool explored;
@@ -29,7 +32,8 @@ class TreeNode {
 	    vector<TreeEdge> branches;
 		
 		TreeNode();
-		TreeNode(NodeType t, double x, double y, double rad, double rch);
+		TreeNode(OwenConstants::NodeType t, double x, double y, double rad, double rch);
+		TreeNode(GNTNode* gntNode);
 		void addChild(TreeNode* child);
 		void moveTo(double x, double y);
 		void move(double x, double y);
@@ -44,6 +48,7 @@ class GNTGraph {
 		
 		GNTGraph();
 		GNTGraph(double x, double y);
+		void update(GNT* gnt);
 };
 
 #endif

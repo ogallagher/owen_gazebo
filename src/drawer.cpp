@@ -10,7 +10,7 @@ Robotica
 #include <cmath>
 
 #include "drawer.h"
-#include "owen_colors.h"
+#include "owen_constants.h"
 
 using namespace std;
 
@@ -144,29 +144,38 @@ void Drawer::circle(double x0, double y0, double r) {
 
 void Drawer::node(TreeNode* node) {
 	switch(node->type) {
-		case GAP:
-		setColor(OwenColors::GAP_COLOR[0],OwenColors::GAP_COLOR[1],OwenColors::GAP_COLOR[2],OwenColors::GAP_COLOR[3]);
-		break;
-		case CLOUD:
-		setColor(OwenColors::CLOUD_COLOR[0],OwenColors::CLOUD_COLOR[1],OwenColors::CLOUD_COLOR[2],OwenColors::CLOUD_COLOR[3]);
+		case OwenConstants::GAP:
+		setColor(OwenConstants::GAP_COLOR[0],OwenConstants::GAP_COLOR[1],OwenConstants::GAP_COLOR[2],OwenConstants::GAP_COLOR[3]);
 		break;
 		
-		case TRIO:
-		setColor(OwenColors::TRIO_COLOR[0],OwenColors::TRIO_COLOR[1],OwenColors::TRIO_COLOR[2],OwenColors::TRIO_COLOR[3]);
+		case OwenConstants::CLOUD:
+		setColor(OwenConstants::CLOUD_COLOR[0],OwenConstants::CLOUD_COLOR[1],OwenConstants::CLOUD_COLOR[2],OwenConstants::CLOUD_COLOR[3]);
 		break;
 		
-		case OTHER:
-		setColor(OwenColors::OTHER_COLOR[0],OwenColors::OTHER_COLOR[1],OwenColors::OTHER_COLOR[2],OwenColors::OTHER_COLOR[3]);
+		case OwenConstants::TRIO:
+		setColor(OwenConstants::TRIO_COLOR[0],OwenConstants::TRIO_COLOR[1],OwenConstants::TRIO_COLOR[2],OwenConstants::TRIO_COLOR[3]);
+		break;
+		
+		case OwenConstants::WALL:
+		setColor(OwenConstants::WALL_COLOR[0],OwenConstants::WALL_COLOR[1],OwenConstants::WALL_COLOR[2],OwenConstants::WALL_COLOR[3]);
+		break;
+		
+		case OwenConstants::OTHER:
+		setColor(OwenConstants::OTHER_COLOR[0],OwenConstants::OTHER_COLOR[1],OwenConstants::OTHER_COLOR[2],OwenConstants::OTHER_COLOR[3]);
 		break;
 		
 		default:
-		setColor(OwenColors::GAP_COLOR[0],OwenColors::GAP_COLOR[1],OwenColors::GAP_COLOR[2],OwenColors::GAP_COLOR[3]);
+		setColor(OwenConstants::GAP_COLOR[0],OwenConstants::GAP_COLOR[1],OwenConstants::GAP_COLOR[2],OwenConstants::GAP_COLOR[3]);
 		break;
 	}
 	
-	circle(node->x,node->y,node->radius);
+	//cout << to_string(node->radius) << endl;
 	
-	setColor(OwenColors::OTHER_COLOR[0],OwenColors::OTHER_COLOR[1],OwenColors::OTHER_COLOR[2],OwenColors::OTHER_COLOR[3]);
+	if (node->type == OwenConstants::GAP || node->type == OwenConstants::CLOUD) {
+		circle(node->x,node->y,node->radius);
+	}
+	
+	setColor(OwenConstants::OTHER_COLOR[0],OwenConstants::OTHER_COLOR[1],OwenConstants::OTHER_COLOR[2],OwenConstants::OTHER_COLOR[3]);
 	for (int i=0; i<node->children.size(); i++) {
 		double x1 = node->x;
 		double y1 = node->y;

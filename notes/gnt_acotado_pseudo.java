@@ -135,7 +135,7 @@ class Explorer() {	//Aplicación ejecutable
 			current.measure = laser.measures[i];
 			
 			if (current.measure <= rangeMax) {	//brecha o frontera
-				if (previous = cloud) {
+				if (previous.label == CLOUD) {
 					current.label = GAP; //fin de nube
 				}
 				else {
@@ -145,10 +145,10 @@ class Explorer() {	//Aplicación ejecutable
 					
 					//determinar si actual es una brecha	
 					if (noise > noiseMax) {	
-						current.tipo = GAP;
+						current.label = GAP;
 					}
 					else {
-						current.tipo = WALL;
+						current.label = WALL;
 					}
 				}
 			}
@@ -178,6 +178,7 @@ class Explorer() {	//Aplicación ejecutable
 			else {
 				//TODO: supongo que esta parte será usada primero, porque aunque he pensado más en la primera,
 				//		el caso de rango infinito debería ser más sencillo.
+				//		Implementar según los apuntes en realtimeboard
 			}
 		}
 	}

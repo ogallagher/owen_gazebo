@@ -11,36 +11,83 @@ Robótica 1
 
 #include <SDL2/SDL.h>
 #include <cmath>
+#include <vector>
 #include <iostream>
 #include <thread>
 
+#include "owen_gazebo/gnt_raw.h" //generado automaticamente segun msg/gnt_raw.msg
+#include "owen_constants.h"
 #include "laser.h"
 #include "gnt_graph.h"
 #include "drawer.h"
+#include "gnt.h"
 
 using namespace std;
 
-string laserTopic = "pioneer3dx/laser_scan";
+string gntRawTopic = "pioneer3dx/gnt_raw";
+int gntRawLength = -1;
+vector<uint8_t> gntRaw;
+bool updatingGNT = false;
+GNT gntPrevious;
+GNT gntCurrent;
 
-Laser laser;
-
-// Reaccionar a info del laser
-void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
-	if (!laser.paramsSet()) {
-		laser.setParams(data);
-		ROS_INFO_STREAM("laser.measuresLen = " + to_string(laser.measuresLen));
+void updateGNT() {
+	gntPrevious.nodes = gntCurrent.nodes; //con vectores en c++, esto es una copia profunda
+	gntCurrent.update(&gntRaw); //agregar nodos al gnt sin comparar con gntPrevious
+	
+	//analizar cambios entre gntPrevious y gntCurrent
+	vector<int> changes; //indices de union, division, aparicion, desaparicion
+	bool foundChanges = false;
+	
+	if (gntCurrent.nodes.size() == gntPrevious.nodes.size()) {
+		for (int i=0; i<gntCurrent.nodes.size(); i++) {
+			if (gntCurrent.nodes[i].type != gntPrevious.nodes[i].type) {
+				changes.push_back(i);
+				foundChanges = true;
+			}
+		}
+	}
+	else {
+		foundChanges = true;
 	}
 	
-	int forward = laser.measuresLen / 2;
-	laser.readMeasures(data);
+	if (foundChanges) {
+		//ROS_INFO_STREAM("Found changes!");
+		
+		if (Laser::finite) {
+			//TODO: implementar según los apuntes en realtimeboard
+		}
+		else {
+			//TODO: supongo que esta parte será usada primero, porque aunque he pensado más en la primera,
+			//		el caso de rango infinito debería ser más sencillo.
+			//		Implementar según los apuntes en realtimeboard
+		}
+	}
 	
-	string laserConfirm = "laser.measures[" + to_string(forward) + "] = " + to_string(laser.measures[forward]);
-	
-	ROS_INFO_STREAM(laserConfirm);
+	updatingGNT = false;
 }
 
-void readLaser(ros::Rate* pacemakerPtr) {
-	ROS_INFO_STREAM("Began readLaser thread.");
+// Reaccionar a info de /gnt_raw
+void gntRawCallback(const owen_gazebo::gnt_raw::ConstPtr &msg) {
+	if (gntRawLength == -1) {
+		gntRawLength = msg->length;
+		ROS_INFO_STREAM("gntRawLength = " + to_string(gntRawLength));
+	}
+	
+	if (!updatingGNT) { //no queremos cambiar gntRaw mientras que updateGNT lo esta usando
+		ROS_INFO_STREAM("Pulling labels from gntRaw message...");
+		gntRaw = msg->labels;
+		
+		updatingGNT = true;
+		updateGNT();
+	}
+	else {
+		ROS_INFO_STREAM("New raw gnt data received while processing the previous; ignoring it.");
+	}
+}
+
+void readGNTRaw(ros::Rate* pacemakerPtr) {
+	ROS_INFO_STREAM("Began readGNTRaw thread.");
     	
 	while(ros::ok) {
         ros::spinOnce(); //Ejecutar callbacks que estan esperando mensajes
@@ -58,13 +105,13 @@ int main(int argc, char* argv[]) {
     ros::Rate pacemaker(2);
     
     //Inicializar lector del sensor
-    ros::Subscriber subscriberLaser = rosnode.subscribe<sensor_msgs::LaserScan>(laserTopic,50,laserCallback);
+    ros::Subscriber subscriberGNTRaw = rosnode.subscribe<owen_gazebo::gnt_raw>(gntRawTopic,50,gntRawCallback);
     
     Drawer drawer;
     
 	if (drawer.init()) {
 		//escuchar topico del laser
-		thread laserThread(readLaser, &pacemaker);
+		thread gntRawThread(readGNTRaw, &pacemaker);
 		
 		//crear GNT
 		GNTGraph gntGraph(drawer.width/2,drawer.height/2);
@@ -82,9 +129,11 @@ int main(int argc, char* argv[]) {
 				}
 			}
 			
+			gntGraph.update(&gntCurrent);
+			
 			gntGraph.root->moveTo(drawer.width/2 + sin(theta)*30,gntGraph.root->y);
 			drawer.graph(&gntGraph);
-
+			
 			drawer.render();
 			theta += M_PI*0.0001;
 		}
