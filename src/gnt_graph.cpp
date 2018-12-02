@@ -58,21 +58,19 @@ void TreeNode::move(double x, double y) {
 GNTGraph::GNTGraph() {
 	branchLength = 10;
 	branchWidth = 1;
-	nodeRadius = 5;
-    root = new TreeNode(OwenConstants::OTHER,0,0,nodeRadius,branchLength);
+	rootRadius = 5;
+    root = new TreeNode(OwenConstants::OTHER,0,0,rootRadius,branchLength);
 }
 
 GNTGraph::GNTGraph(double x, double y) {
 	branchLength = 100;
 	branchWidth = 1;
-	nodeRadius = 5;
-    root = new TreeNode(OwenConstants::OTHER,x,y,nodeRadius,branchLength);
+	rootRadius = 5;
+    root = new TreeNode(OwenConstants::OTHER,x,y,rootRadius,branchLength);
 }
 
 void GNTGraph::update(GNT* gnt) {
 	root->children.clear();
-	
-	int skip = 1;
 	
 	int nodesLength = static_cast<int>(gnt->nodes.size());
 	double branchT = 0;
@@ -81,20 +79,18 @@ void GNTGraph::update(GNT* gnt) {
 	double branchY = 0;
 	
 	for (int i=0; i<nodesLength; i++) {
-		if (i%skip == 0) {
-			TreeNode treeNode(&(gnt->nodes[i])); //saca info de type,visible,explored
-			
-			branchX = root->reach * cos(branchT);
-			branchY = root->reach * sin(branchT);
-			
-			treeNode.x = root->x + branchX;
-			treeNode.y = root->y - branchY; //negativo porque en SDL y crece hacia abajo
-			treeNode.radius = 3;
-			
-			root->addChild(&treeNode);
-			
-			branchT += branchTD;
-		}
+		TreeNode treeNode(&(gnt->nodes[i])); //saca info de type,visible,explored
+		
+		branchX = root->reach * cos(branchT);
+		branchY = root->reach * sin(branchT);
+		
+		treeNode.x = root->x + branchX;
+		treeNode.y = root->y - branchY; //negativo porque en SDL y crece hacia abajo
+		treeNode.radius = 3; //TODO: este renglón no debería ser necesario, pero por alguna razón los nuevos nodos
+		
+		root->addChild(&treeNode);
+		
+		branchT += branchTD;
 	}
 }
 

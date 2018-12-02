@@ -6,7 +6,6 @@
 	27 noviembre 2018
 */
 
-#include <math.h>
 #include <limits>       // std::numeric_limits
 
 #include "sensor_msgs/LaserScan.h"
@@ -16,10 +15,10 @@ using namespace std;
 class Laser {
 	public:
 		static bool finite;
-		static double noiseMax;
-		static double noiseMin;
+		static double noiseMax; //distancia máxima entre medida real y esperada que aún se acepta como parte de la misma frontera (no una brecha)
 		
-		double angleUnit;
+		double angleUnitDeg;
+		double angleUnitRad;
 		double angleMin;
 		double angleMax;
 		double* measures;

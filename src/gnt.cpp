@@ -37,7 +37,7 @@ void GNT::update(vector<uint8_t>* tags) {
 	
 	nodes.clear();
 	OwenConstants::NodeType type = OwenConstants::OTHER;
-	bool cloudSwitch = false; //nubes rodeadas por nubes
+	bool cloudSwitch = false; //nubes rodeadas por nubes TODO: usa cloudSwitch para determinar puntos medios de nubes
 	bool gapSwitch = false; //brechas rodeadas por brechas: TRIOS
 	
 	//cout << "Starting tags processing..." << endl;

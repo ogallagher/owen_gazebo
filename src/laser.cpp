@@ -3,13 +3,13 @@
 	27 noviembre 2018
 */
 
+#include <cmath>
 #include "laser.h"
 
 using namespace std;
 
 bool Laser::finite = true;
-double Laser::noiseMin = 0.1;
-double Laser::noiseMax = 25;
+double Laser::noiseMax = 0.5;
 
 Laser::Laser() {
 	rangeMax = 4;				//rango de sensado
@@ -25,7 +25,9 @@ bool Laser::paramsSet() {
 }
 
 void Laser::setParams(const sensor_msgs::LaserScan::ConstPtr &data) {
-	angleUnit = data->angle_increment;
+	angleUnitDeg = data->angle_increment;
+	angleUnitRad = (angleUnitDeg/180.0)*M_PI;
+	
 	angleMin = data->angle_min;
 	angleMax = data->angle_max;
 	

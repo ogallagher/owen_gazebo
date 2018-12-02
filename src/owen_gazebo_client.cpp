@@ -2,7 +2,8 @@
 
     Autor: Owen Gallagher
     Fecha de creacion: 6 noviembre 2018
-    Descripcion: nodo cliente para controlar el Pioneer3at simulado con Gazebo.
+    Descripcion: nodo cliente para controlar el Pioneer3dx simulado con Gazebo 
+				 y servir como la primera capa de filtro de las medidas del láser
 
 */
 
@@ -15,6 +16,7 @@
 #include <thread>
 #include <limits>       // std::numeric_limits
 #include <vector>
+#include <cmath>
 
 #include "owen_constants.h"
 #include "owen_gazebo/gnt_raw.h"
@@ -107,7 +109,10 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 		double currentMeasure;
 		double previousMeasure;
 		double oldMeasure;
-		double noise;
+		
+		//variables para determinar ruido
+		double z,y,x,w,noise;
+		double t = laser.angleUnitRad;
 		
 		currentMeasure = laser.measures[laser.measuresLen-1];
 		previousMeasure = laser.measures[laser.measuresLen-1-1];
@@ -131,14 +136,14 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 					currentLabel = OwenConstants::GAP; //fin de nube
 				}
 				else {
-					//determinar ruido (funcion de error)
-					noise = oldMeasure - previousMeasure;
-					if (noise == 0) {
-						noise = laser.noiseMin;
-					}
-					
-					ROS_INFO_STREAM("Noise.denom: " + to_string(noise));
-					noise = abs((previousMeasure - currentMeasure) - noise) / abs(noise);
+					//determinar ruido
+					z = pow(oldMeasure,2) + pow(previousMeasure,2) - 2*oldMeasure*previousMeasure*acos(t);
+					z = sqrt(z);
+					y = asin(oldMeasure*sin(t)/z);
+					x = M_PI-y;
+					w = y-t;
+					noise = b * sin(x) / sin(w);
+					noise = abs(noise - currentMeasure);
 					ROS_INFO_STREAM("Noise: " + to_string(noise));
 					
 					//determinar si actual es una brecha
