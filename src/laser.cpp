@@ -10,13 +10,14 @@ using namespace std;
 
 bool Laser::finite = true;
 double Laser::noiseMax = 0.5;
+double Laser::rangeMin = 0.5;
 
 Laser::Laser() {
 	rangeMax = 4;				//rango de sensado
 }
 
 bool Laser::paramsSet() {
-	if (!angleUnit || !angleMin || !angleMax) {
+	if (!angleUnitDeg || !angleMin || !angleMax) {
 		return false;
 	}
 	else {
@@ -47,8 +48,8 @@ void Laser::readMeasures(const sensor_msgs::LaserScan::ConstPtr &data) {
 		if (measure == numeric_limits<double>::infinity() || measure > rangeMax) {
 			measures[i] = numeric_limits<double>::infinity();
 		}
-		else if (measure < 0.4) { //el sensor da valores extranos cuando se acerca demasiado a la pared
-			measures[i] = 0;
+		else if (measure < rangeMin) { //el sensor da valores extranos cuando se acerca demasiado a la pared
+			measures[i] = rangeMin;
 		}
 		else {
 			//normalizar

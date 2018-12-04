@@ -56,16 +56,16 @@ void TreeNode::move(double x, double y) {
 }
 
 GNTGraph::GNTGraph() {
-	branchLength = 10;
 	branchWidth = 1;
-	rootRadius = 5;
+	double branchLength = 10;
+	double rootRadius = 5;
     root = new TreeNode(OwenConstants::OTHER,0,0,rootRadius,branchLength);
 }
 
 GNTGraph::GNTGraph(double x, double y) {
-	branchLength = 100;
 	branchWidth = 1;
-	rootRadius = 5;
+	double branchLength = 100;
+	double rootRadius = 5;
     root = new TreeNode(OwenConstants::OTHER,x,y,rootRadius,branchLength);
 }
 
@@ -74,7 +74,7 @@ void GNTGraph::update(GNT* gnt) {
 	
 	int nodesLength = static_cast<int>(gnt->nodes.size());
 	double branchT = 0;
-	double branchTD = 2*M_PI/(nodesLength/skip);
+	double branchTD = 2*M_PI/nodesLength;
 	double branchX = 0;
 	double branchY = 0;
 	
@@ -86,7 +86,16 @@ void GNTGraph::update(GNT* gnt) {
 		
 		treeNode.x = root->x + branchX;
 		treeNode.y = root->y - branchY; //negativo porque en SDL y crece hacia abajo
-		treeNode.radius = 3; //TODO: este renglón no debería ser necesario, pero por alguna razón los nuevos nodos
+		
+		switch (treeNode.type) {
+		case OwenConstants::GAP:
+		case OwenConstants::CLOUD:
+			treeNode.radius = 4;
+			break;
+			
+		default:
+			treeNode.radius = 2;
+		}
 		
 		root->addChild(&treeNode);
 		

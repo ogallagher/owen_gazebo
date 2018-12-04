@@ -124,11 +124,16 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 			previousMeasure = currentMeasure;
 			currentMeasure = laser.measures[i];
 			
+			//actualizar etiquetas
+			oldLabel = previousLabel;
+			previousLabel = currentLabel;
+			
 			if (currentMeasure == numeric_limits<double>::infinity()) { //nube
 				currentLabel = OwenConstants::CLOUD;
 				
 				if (previousLabel == OwenConstants::WALL) { //inicio de nube
 					previousLabel = OwenConstants::GAP;
+					labels.back() = static_cast<uint8_t>(previousLabel);
 				}
 			}
 			else { //brecha o frontera
@@ -137,12 +142,12 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 				}
 				else {
 					//determinar ruido
-					z = pow(oldMeasure,2) + pow(previousMeasure,2) - 2*oldMeasure*previousMeasure*acos(t);
+					z = pow(oldMeasure,2) + pow(previousMeasure,2) - 2*oldMeasure*previousMeasure*cos(t);
 					z = sqrt(z);
 					y = asin(oldMeasure*sin(t)/z);
 					x = M_PI-y;
 					w = y-t;
-					noise = b * sin(x) / sin(w);
+					noise = previousMeasure * sin(x) / sin(w);
 					noise = abs(noise - currentMeasure);
 					ROS_INFO_STREAM("Noise: " + to_string(noise));
 					

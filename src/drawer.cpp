@@ -171,9 +171,9 @@ void Drawer::node(TreeNode* node) {
 	
 	//cout << to_string(node->radius) << endl;
 	
-	if (node->type == OwenConstants::GAP || node->type == OwenConstants::CLOUD) {
+	//if (node->type == OwenConstants::GAP || node->type == OwenConstants::CLOUD) {
 		circle(node->x,node->y,node->radius);
-	}
+	//}
 	
 	setColor(OwenConstants::OTHER_COLOR[0],OwenConstants::OTHER_COLOR[1],OwenConstants::OTHER_COLOR[2],OwenConstants::OTHER_COLOR[3]);
 	for (int i=0; i<node->children.size(); i++) {

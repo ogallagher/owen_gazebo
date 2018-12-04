@@ -37,8 +37,9 @@ void GNT::update(vector<uint8_t>* tags) {
 	
 	nodes.clear();
 	OwenConstants::NodeType type = OwenConstants::OTHER;
-	bool cloudSwitch = false; //nubes rodeadas por nubes TODO: usa cloudSwitch para determinar puntos medios de nubes
 	bool gapSwitch = false; //brechas rodeadas por brechas: TRIOS
+	int cloudIndex = -1;
+	int gapCounter = 0;
 	
 	//cout << "Starting tags processing..." << endl;
 	for (int i=0; i<tags->size(); i++) {
@@ -48,15 +49,18 @@ void GNT::update(vector<uint8_t>* tags) {
 		if (type == OwenConstants::CLOUD) {
 			gapSwitch = false;
 			
-			if (cloudSwitch) {
-				nodes.push_back(new GNTNode(OwenConstants::OTHER));
-			}
-			else {
-				nodes.push_back(new GNTNode(OwenConstants::CLOUD));
+			nodes.push_back(new GNTNode(OwenConstants::OTHER));
+			if (cloudIndex < 0) { //inicio de la nube
+				cloudIndex = i;
 			}
 		}
 		else if (type == OwenConstants::GAP) { 
-			cloudSwitch = false;
+			if (cloudIndex >= 0) { //fin de la nube; calcula el punto medio
+				cloudIndex = (i-1 + cloudIndex) / 2;
+				nodes[cloudIndex].type = OwenConstants::CLOUD;
+				
+				cloudIndex = -1;
+			}
 			
 			if (nodes.size() > 0) {
 				if (gapSwitch) { //tres brechas seguidas; agrega un trio a la brecha previa
@@ -68,18 +72,21 @@ void GNT::update(vector<uint8_t>* tags) {
 			}
 			
 			nodes.push_back(new GNTNode(OwenConstants::GAP));
+			gapCounter++;
 		}
 		else if (type == OwenConstants::WALL) {
 			gapSwitch = false;
-			cloudSwitch = false;
+			cloudIndex = -1;
 			
 			nodes.push_back(new GNTNode(OwenConstants::WALL));
 		}
 		else {
 			gapSwitch = false;
-			cloudSwitch = false;
+			cloudIndex = -1;
 			
 			nodes.push_back(new GNTNode(OwenConstants::OTHER));
 		}
 	}
+	
+	cout << "#gaps: " << to_string(gapCounter) << endl;
 }

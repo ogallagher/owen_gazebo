@@ -42,9 +42,9 @@ class TreeNode {
 class GNTGraph {
 	public:
 	    TreeNode* root;
-		double branchLength;
+		//double branchLength;
 		double branchWidth;
-		double nodeRadius;
+		//double nodeRadius;
 		
 		GNTGraph();
 		GNTGraph(double x, double y);
