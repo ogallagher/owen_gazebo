@@ -169,20 +169,22 @@ void Drawer::node(TreeNode* node) {
 		break;
 	}
 	
-	//cout << to_string(node->radius) << endl;
-	
-	//if (node->type == OwenConstants::GAP || node->type == OwenConstants::CLOUD) {
+	if (node->type == OwenConstants::GAP || node->type == OwenConstants::CLOUD || node->type == OwenConstants::TRIO) {
 		circle(node->x,node->y,node->radius);
-	//}
+	}
 	
 	setColor(OwenConstants::OTHER_COLOR[0],OwenConstants::OTHER_COLOR[1],OwenConstants::OTHER_COLOR[2],OwenConstants::OTHER_COLOR[3]);
 	for (int i=0; i<node->children.size(); i++) {
-		double x1 = node->x;
-		double y1 = node->y;
-		double x2 = node->children.at(i).x;
-		double y2 = node->children.at(i).y;
+		TreeNode child = node->children[i];
 		
-		line(x1,y1,x2,y2);
+		if (child.type == OwenConstants::GAP || child.type == OwenConstants::CLOUD || child.type == OwenConstants::TRIO) {
+			double x1 = node->x;
+			double y1 = node->y;
+			double x2 = child.x;
+			double y2 = child.y;
+		
+			line(x1,y1,x2,y2);
+		}
 	}
 }
 

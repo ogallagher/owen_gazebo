@@ -73,7 +73,7 @@ void GNTGraph::update(GNT* gnt) {
 	root->children.clear();
 	
 	int nodesLength = static_cast<int>(gnt->nodes.size());
-	double branchT = 0;
+	double branchT = -M_PI/2;
 	double branchTD = 2*M_PI/nodesLength;
 	double branchX = 0;
 	double branchY = 0;
@@ -88,6 +88,10 @@ void GNTGraph::update(GNT* gnt) {
 		treeNode.y = root->y - branchY; //negativo porque en SDL y crece hacia abajo
 		
 		switch (treeNode.type) {
+		case OwenConstants::TRIO:
+			treeNode.radius = 6;
+			break;
+			
 		case OwenConstants::GAP:
 		case OwenConstants::CLOUD:
 			treeNode.radius = 4;
@@ -95,6 +99,7 @@ void GNTGraph::update(GNT* gnt) {
 			
 		default:
 			treeNode.radius = 2;
+			break;
 		}
 		
 		root->addChild(&treeNode);

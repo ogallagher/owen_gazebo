@@ -9,8 +9,9 @@
 using namespace std;
 
 bool Laser::finite = true;
-double Laser::noiseMax = 0.5;
 double Laser::rangeMin = 0.5;
+double Laser::noiseMax = 0.5;
+double Laser::offsetMax = 0.03;
 
 Laser::Laser() {
 	rangeMax = 4;				//rango de sensado

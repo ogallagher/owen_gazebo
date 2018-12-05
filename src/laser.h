@@ -15,8 +15,9 @@ using namespace std;
 class Laser {
 	public:
 		static bool finite;
-		static double noiseMax; //distancia máxima entre medida real y esperada que aún se acepta como parte de la misma frontera (no una brecha)
-		static double rangeMin; //si se acerca demasiado a la pared, el sensor da valores incorrectos
+		static double rangeMin; //si se acerca demasiado a la pared, el sensor da valores incorrectos (no ayuda en todos casos, porque tambien algunos valores incorrectos estallan)
+		static double noiseMax; //distancia máxima entre medida real y esperada que aún se acepta como parte de la misma frontera continua (detecta brechas y esquinas; discontinuidades)
+		static double offsetMax; //distancia maxima entre el punto de cruce de la frontera antes y la frontera despues, y la medida previa (identifica brechas)
 		
 		double angleUnitDeg;
 		double angleUnitRad;

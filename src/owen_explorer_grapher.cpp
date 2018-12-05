@@ -75,7 +75,6 @@ void gntRawCallback(const owen_gazebo::gnt_raw::ConstPtr &msg) {
 	}
 	
 	if (!updatingGNT) { //no queremos cambiar gntRaw mientras que updateGNT lo esta usando
-		ROS_INFO_STREAM("Pulling labels from gntRaw message...");
 		gntRaw = msg->labels;
 		
 		updatingGNT = true;
@@ -131,11 +130,8 @@ int main(int argc, char* argv[]) {
 			
 			gntGraph.update(&gntCurrent);
 			
-			gntGraph.root->moveTo(drawer.width/2 + sin(theta)*30,gntGraph.root->y);
 			drawer.graph(&gntGraph);
-			
 			drawer.render();
-			theta += M_PI*0.0001;
 		}
 		
 		ROS_INFO_STREAM("owen_explorer_grapher killed.");

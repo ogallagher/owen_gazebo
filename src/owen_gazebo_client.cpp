@@ -84,6 +84,11 @@ void getCommands(ros::Rate *pacemakerPtr) {
     }
 }
 
+double lawCos(double a, double b, double t) { //dado dos lados y el angulo en el medio, sale el tercer lado del triangulo
+	double c = pow(a,2) + pow(b,2) - 2*a*b*cos(t);
+	return sqrt(c);
+}
+
 // Reaccionar a info del láser
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 	if (!laser.paramsSet()) {
@@ -110,15 +115,15 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 		double previousMeasure;
 		double oldMeasure;
 		
-		//variables para determinar ruido
-		double z,y,x,w,noise;
+		//variables para determinar ruido y desplazamiento
+		double z,y,x,w,v,r,q,p,m,noise,offset,nextMeasure;
 		double t = laser.angleUnitRad;
 		
 		currentMeasure = laser.measures[laser.measuresLen-1];
 		previousMeasure = laser.measures[laser.measuresLen-1-1];
 		
 		//checar si medidas son brechas o nubes
-		for (int i=0; i<laser.measuresLen; i++) {
+		for (int i=0; i<laser.measuresLen; i++) { //TODO: maneja los casos a los extremos del arreglo?
 			//actualizar medidas
 			oldMeasure = previousMeasure;
 			previousMeasure = currentMeasure;
@@ -140,27 +145,56 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &data) {
 				if (previousLabel == OwenConstants::CLOUD) {
 					currentLabel = OwenConstants::GAP; //fin de nube
 				}
+				else if (previousLabel == OwenConstants::GAP) { //despues de una brecha no queremos contar la brecha como si fuera una frontera
+					currentLabel = OwenConstants::WALL;
+				}
 				else {
 					//determinar ruido
-					z = pow(oldMeasure,2) + pow(previousMeasure,2) - 2*oldMeasure*previousMeasure*cos(t);
+					z = lawCos(oldMeasure,previousMeasure,t);
 					z = sqrt(z);
 					y = asin(oldMeasure*sin(t)/z);
 					x = M_PI-y;
 					w = y-t;
 					noise = previousMeasure * sin(x) / sin(w);
 					noise = abs(noise - currentMeasure);
-					ROS_INFO_STREAM("Noise: " + to_string(noise));
+					//ROS_INFO_STREAM("Noise: " + to_string(noise));
 					
 					//determinar si actual es una brecha
-					if (noise > Laser::noiseMax) {
-						currentLabel = OwenConstants::GAP; //dista demasiado para solo ser ruido
+					if (noise > Laser::noiseMax) { //es una discontinuidad
+						if (i+1 < laser.measuresLen) {
+							nextMeasure = laser.measures[i+1];
+						}
+						else { //fin del arreglo; completa el ciclo
+							nextMeasure = laser.measures[0];
+						}
+						
+						if (nextMeasure == numeric_limits<double>::infinity()) { //inicio de nube
+							currentLabel = OwenConstants::GAP;
+						}
+						else {
+							z = lawCos(previousMeasure,currentMeasure,t);
+							y = lawCos(currentMeasure,nextMeasure,t);
+							x = asin(nextMeasure*sin(t)/y);
+							w = M_PI-x;
+							v = x-t;
+							m = lawCos(oldMeasure,previousMeasure,t);
+							r = asin(oldMeasure*sin(t)/m);
+							q = sin(w)*currentMeasure/sin(v);
+							p = abs(previousMeasure-q);
+							offset = sin(v)*p/sin(M_PI-r-v);
+							
+							if (offset > Laser::offsetMax) { //es una brecha
+								ROS_INFO_STREAM("Offset @gap: " + to_string(offset));
+								currentLabel = OwenConstants::GAP; //dista demasiado para solo ser ruido
+							}
+						}
 					}
 					else {
 						currentLabel = OwenConstants::WALL; //probablemente es parte de la misma frontera 
 					}
 				}
 			}
-		
+			
 			labels.push_back(static_cast<uint8_t>(currentLabel));
 		}
 		
