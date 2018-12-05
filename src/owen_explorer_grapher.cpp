@@ -30,18 +30,25 @@ vector<uint8_t> gntRaw;
 bool updatingGNT = false;
 GNT gntPrevious;
 GNT gntCurrent;
+GNT gntPreviousPruned; //los GNT recortados no tienen nodos que representan fronteras y otras cosas
+GNT gntCurrentPruned;
 
 void updateGNT() {
 	gntPrevious.nodes = gntCurrent.nodes; //con vectores en c++, esto es una copia profunda
+	gntPreviousPruned.nodes = gntCurrentPruned.nodes;
+	
 	gntCurrent.update(&gntRaw); //agregar nodos al gnt sin comparar con gntPrevious
+	gntCurrent.prune(&gntCurrentPruned);
 	
 	//analizar cambios entre gntPrevious y gntCurrent
+	//TODO: usar este ciclo para tambien ignorar arboles que obviamente son resultados de medidas erroneas
+	//		(si hay demasiado cambio en un arbol, probablemente ese arbol no es correcto)
 	vector<int> changes; //indices de union, division, aparicion, desaparicion
 	bool foundChanges = false;
 	
-	if (gntCurrent.nodes.size() == gntPrevious.nodes.size()) {
-		for (int i=0; i<gntCurrent.nodes.size(); i++) {
-			if (gntCurrent.nodes[i].type != gntPrevious.nodes[i].type) {
+	if (gntCurrentPruned.nodes.size() == gntPreviousPruned.nodes.size()) {
+		for (int i=0; i<gntCurrentPruned.nodes.size(); i++) {
+			if (gntCurrentPruned.nodes[i].type != gntPreviousPruned.nodes[i].type) {
 				changes.push_back(i);
 				foundChanges = true;
 			}
@@ -71,7 +78,7 @@ void updateGNT() {
 void gntRawCallback(const owen_gazebo::gnt_raw::ConstPtr &msg) {
 	if (gntRawLength == -1) {
 		gntRawLength = msg->length;
-		ROS_INFO_STREAM("gntRawLength = " + to_string(gntRawLength));
+		//ROS_INFO_STREAM("gntRawLength = " + to_string(gntRawLength));
 	}
 	
 	if (!updatingGNT) { //no queremos cambiar gntRaw mientras que updateGNT lo esta usando

@@ -31,7 +31,9 @@ GNT::GNT() {
 	//nada
 }
 
-//agregar nodos sin contexto del pasado; preparar etiquetas, eliminando nubes repetidas y agregando trios invisibles
+//agregar nodos sin contexto del pasado; preparar etiquetas, eliminando nubes repetidas y agregando trios invisibles.
+//TODO: este metodo podria ser mejorado mucho si a la vez construye su forma recortada (sin WALL y OTHER). Asi no tendria
+//		tantos ciclos para saltar por estos nodos generalmente insignificantes.
 void GNT::update(vector<uint8_t>* tags) {
 	nodes.clear();
 	OwenConstants::NodeType type = OwenConstants::OTHER;
@@ -40,44 +42,20 @@ void GNT::update(vector<uint8_t>* tags) {
 	int gapCounter = 0;
 	
 	for (int i=0; i<tags->size(); i++) {
-		if (nodes.size() > 0) {
-			cout << to_string(i) << ": " << to_string(nodes[i-1].type) << endl;
-		}
-		
 		type = static_cast<OwenConstants::NodeType>((*tags)[i]);
 		
 		if (type == OwenConstants::CLOUD) {
 			nodes.push_back(new GNTNode(OwenConstants::OTHER));
 			
 			if (cloudIndex < 0 && gapCounter != 0) { //inicio de la nube
-				cloudIndex = i;
-			}
-			else if (i+1 == tags->size()) { //completa nubes que abarcan los extremos del vector
-				bool cloudDone = false;
-				int j = 0;
-				
-				while (!cloudDone) {
-					if (nodes[j].type == OwenConstants::GAP) { //fin de nube; calcula el punto medio
-						j = j+i;
-						cloudIndex = (cloudIndex+j)/2;
-						
-						if (cloudIndex > i) {
-							cloudIndex -= i+1;
-						}
-						
-						nodes[cloudIndex].type = OwenConstants::CLOUD;
-						cloudIndex = -1;
-						cloudDone = true;
-					}
-					j++;
-				}
+				cloudIndex = nodes.size()-1;
 			}
 			
 			gapSwitch = false;
 		}
 		else if (type == OwenConstants::GAP) { 
 			if (cloudIndex >= 0) { //fin de la nube; calcula el punto medio
-				cloudIndex = (i-1 + cloudIndex) / 2;
+				cloudIndex = (nodes.size()-1 + cloudIndex) / 2;
 				nodes[cloudIndex].type = OwenConstants::CLOUD;
 				
 				cloudIndex = -1;
@@ -85,45 +63,43 @@ void GNT::update(vector<uint8_t>* tags) {
 			
 			if (nodes.size() > 0) {
 				if (gapSwitch) { //tres brechas seguidas; agrega un trio a la brecha previa
-					int h = i-1;
-					if (h < 0) {
-						h = nodes.size()-1;
-					}
+					int h = nodes.size()-2;
 					bool trioDone = false;
 					
-					while (!trioDone && h != i) {
+					if (h < 0) {
+						trioDone = true;
+					}
+					
+					while (!trioDone) {
 						if (nodes[h].type == OwenConstants::GAP || nodes[h].type == OwenConstants::TRIO) {
 							nodes[h].type = OwenConstants::TRIO;
 							trioDone = true;
 						}
+						else if (h == 0) {
+							trioDone = true;
+						}
 						else {
 							h--;
-							if (h < 0) {
-								h = nodes.size()-1;
-							}
 						}
 					}
 				}
 				else {
-					int h = i-1;
+					int h = nodes.size()-2;
 					bool gapDone = false;
 					if (h < 0) {
-						h = nodes.size()-1;
+						gapDone = true;
 					}
 					
-					while (!gapDone && h != i) {
+					while (!gapDone) {
 						if (nodes[h].type == OwenConstants::GAP || nodes[h].type == OwenConstants::TRIO) {
 							gapSwitch = true;
 							gapDone = true;
 						}
-						else if (nodes[h].type == OwenConstants::CLOUD) {
+						else if (nodes[h].type == OwenConstants::CLOUD || h == 0) {
 							gapDone = true;
 						}
 						
 						h--;
-						if (h<0) {
-							h = nodes.size()-1;
-						}
 					}
 				}
 			}
@@ -139,5 +115,123 @@ void GNT::update(vector<uint8_t>* tags) {
 		}
 	}
 	
-	cout << "#gaps: " << to_string(gapCounter) << endl;
+	//casos a los extremos: nubes
+	if (cloudIndex >= 0) {
+		bool cloudDone = false;
+		int j = 0;
+		while (!cloudDone) {
+			if (nodes[j].type == OwenConstants::GAP) { //fin de nube; calcula el punto medio
+				j = j+nodes.size()-1;
+				cloudIndex = (cloudIndex+j)/2;
+				cloudIndex = cloudIndex % nodes.size();
+				
+				nodes[cloudIndex].type = OwenConstants::CLOUD;
+				cloudIndex = -1;
+				cloudDone = true;
+			}
+			j++;
+			if (j == nodes.size()-1) {
+				cloudDone = true;
+			}
+		}
+	}
+	
+	//casos a los extremos: trios
+	OwenConstants::NodeType last;
+	OwenConstants::NodeType first;
+	int lasti = -1;
+	int firsti = -1;
+	int ends = 0;
+	bool endsDone = false;
+	bool nextDone = false;
+	
+	while (!endsDone) {
+		first = nodes[ends].type;
+		
+		if (first != OwenConstants::WALL && first != OwenConstants::OTHER) {
+			if (first == OwenConstants::CLOUD) {
+				nextDone = true; //no hay trio por los extremos
+			}
+			else {
+				firsti = ends;
+			}
+			endsDone = true; //encontramos el primer nodo importante
+		}
+	
+		ends++;
+		if (ends == nodes.size()-1) {
+			endsDone = true;
+			nextDone = true;
+		}
+	}
+	if (!nextDone) {
+		ends = nodes.size()-1;
+		endsDone = false;
+		
+		while (!endsDone) {
+			last = nodes[ends].type;
+			
+			if (last != OwenConstants::WALL && last != OwenConstants::OTHER) {
+				if (last == OwenConstants::CLOUD) {
+					nextDone = true; //no hay trio por los extremos
+				}
+				else {
+					lasti = ends;
+				}
+				endsDone = true; //encontramos el ultimo nodo importante
+			}
+		
+			ends--;
+			if (ends == 0) {
+				endsDone = true;
+				nextDone = true;
+			}
+		}
+	}
+	
+	if (!nextDone) {
+		int next = firsti+1;
+		bool nextDone = false;
+		while (!nextDone && next < nodes.size()-1) {
+			if (nodes[next].type == OwenConstants::WALL || nodes[next].type == OwenConstants::OTHER) {
+				next++;
+			}
+			else {
+				if (nodes[next].type != OwenConstants::CLOUD) { //el segundo nodo hace que el primero sea un trio
+					nodes[first].type = OwenConstants::TRIO;
+				}
+				nextDone = true;
+			}
+		}
+
+		
+		next = lasti-1;
+		nextDone = false;
+		while (!nextDone && next > 0) {
+			if (nodes[next].type == OwenConstants::WALL || nodes[next].type == OwenConstants::OTHER) {
+				next--;
+			}
+			else {
+				if (nodes[next].type != OwenConstants::CLOUD) { //el penultimo nodo hace que el ultimo sea un trio
+					nodes[last].type = OwenConstants::TRIO;
+				}
+				nextDone = true;
+			}
+		}
+	}
+	
+	//cout << "#gaps: " << to_string(gapCounter) << endl;
+}
+
+void GNT::prune(GNT* pruned) { //genera una copia de si mismo, sin nodos WALL y OTHER
+	pruned->nodes.clear();
+	
+	OwenConstants::NodeType type;
+	for (int i=0; i<nodes.size(); i++) {
+		type = nodes[i].type;
+		
+		if (type != OwenConstants::WALL && type != OwenConstants::OTHER) {
+			pruned->nodes.push_back(new GNTNode(type));
+		}
+	}
 }

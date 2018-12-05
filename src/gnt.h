@@ -31,6 +31,7 @@ class GNT {
 		GNT();
 		void update(vector<uint8_t>* tags); //agregar nodos sin contexto del pasado; preparar etiquetas,
 											//eliminando nubes repetidas y agregando trios invisibles
+		void prune(GNT* pruned); //genera una copia de si mismo, sin nodos WALL y OTHER, y lo almacena en pruned
 };
 
 #endif
